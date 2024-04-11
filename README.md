@@ -1,3 +1,8 @@
+# Path Planning
+This repository is forked from Huiming Zhou's [github](https://github.com/zhm-real/PathPlanning). Main changes is the introduction of the "envType" variable for 2D environments, both for Sampling_based_planning and for Search_based_planning to allow the definition of several environments and easy switching between them. Additionally the interface for the algorithms is changed and main files are added to the root directory to call the algorithms. 
+
+
+
 Overview
 ------
 This repository implements some common path planning algorithms used in robotics, including Search-based algorithms and Sampling-based algorithms. We designed animation for each algorithm to display the running process. The related papers are listed in [Papers](https://github.com/zhm-real/PathPlanning#papers).
