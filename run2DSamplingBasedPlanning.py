@@ -41,6 +41,7 @@ if __name__ == "__main__":
     # create new windows for all algorithms
     for lib in algorithm_list: 
         plt.figure()
+        print('running: ', lib.__name__)
         lib.main(envType, s_start, s_end)
         
     # Anytime_D_star.main(envType, s_start, s_end)
