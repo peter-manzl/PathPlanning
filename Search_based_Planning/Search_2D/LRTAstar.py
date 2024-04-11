@@ -15,11 +15,11 @@ from Search_2D import queue, plotting, env
 
 
 class LrtAStarN:
-    def __init__(self, s_start, s_goal, N, heuristic_type):
+    def __init__(self, s_start, s_goal, N, heuristic_type, envType = 0):
         self.s_start, self.s_goal = s_start, s_goal
         self.heuristic_type = heuristic_type
 
-        self.Env = env.Env()
+        self.Env = env.Env(envType )
 
         self.u_set = self.Env.motions  # feasible input set
         self.obs = self.Env.obs  # position of obstacles
@@ -214,12 +214,11 @@ class LrtAStarN:
         return False
 
 
-def main():
-    s_start = (10, 5)
-    s_goal = (45, 25)
+def main(envType = 0, s_start = (10, 5), s_goal = (45, 25)):
+    
 
-    lrta = LrtAStarN(s_start, s_goal, 250, "euclidean")
-    plot = plotting.Plotting(s_start, s_goal)
+    lrta = LrtAStarN(s_start, s_goal, 250, "euclidean", envType)
+    plot = plotting.Plotting(s_start, s_goal, envType)
 
     lrta.searching()
     plot.animation_lrta(lrta.path, lrta.visited,

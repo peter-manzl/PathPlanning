@@ -15,11 +15,11 @@ from Search_2D import queue, plotting, env
 
 
 class RTAAStar:
-    def __init__(self, s_start, s_goal, N, heuristic_type):
+    def __init__(self, s_start, s_goal, N, heuristic_type, envType = 0):
         self.s_start, self.s_goal = s_start, s_goal
         self.heuristic_type = heuristic_type
 
-        self.Env = env.Env()
+        self.Env = env.Env(envType)
 
         self.u_set = self.Env.motions  # feasible input set
         self.obs = self.Env.obs  # position of obstacles
@@ -221,12 +221,11 @@ class RTAAStar:
         return False
 
 
-def main():
-    s_start = (10, 5)
-    s_goal = (45, 25)
+def main(envType = 0, s_start = (10, 5), s_goal = (45, 25)):
+    
 
-    rtaa = RTAAStar(s_start, s_goal, 240, "euclidean")
-    plot = plotting.Plotting(s_start, s_goal)
+    rtaa = RTAAStar(s_start, s_goal, 240, "euclidean", envType)
+    plot = plotting.Plotting(s_start, s_goal, envType)
 
     rtaa.searching()
     plot.animation_lrta(rtaa.path, rtaa.visited,

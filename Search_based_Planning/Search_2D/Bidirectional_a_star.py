@@ -15,12 +15,12 @@ from Search_2D import plotting, env
 
 
 class BidirectionalAStar:
-    def __init__(self, s_start, s_goal, heuristic_type):
+    def __init__(self, s_start, s_goal, heuristic_type, envType = 0):
         self.s_start = s_start
         self.s_goal = s_goal
         self.heuristic_type = heuristic_type
 
-        self.Env = env.Env()  # class Env
+        self.Env = env.Env(envType)  # class Env
 
         self.u_set = self.Env.motions  # feasible input set
         self.obs = self.Env.obs  # position of obstacles
@@ -214,12 +214,12 @@ class BidirectionalAStar:
         return False
 
 
-def main():
-    x_start = (5, 5)
-    x_goal = (45, 25)
+def main(envType = 1, x_start = (5, 5), x_goal = (45, 25)):
+    
+    
 
-    bastar = BidirectionalAStar(x_start, x_goal, "euclidean")
-    plot = plotting.Plotting(x_start, x_goal)
+    bastar = BidirectionalAStar(x_start, x_goal, "euclidean", envType)
+    plot = plotting.Plotting(x_start, x_goal, envType)
 
     path, visited_fore, visited_back = bastar.searching()
     plot.animation_bi_astar(path, visited_fore, visited_back, "Bidirectional-A*")  # animation

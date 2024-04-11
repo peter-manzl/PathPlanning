@@ -54,12 +54,11 @@ class Dijkstra(AStar):
         return self.extract_path(self.PARENT), self.CLOSED
 
 
-def main():
-    s_start = (5, 5)
-    s_goal = (45, 25)
+def main(envType = 0,  s_start = (5, 5), s_goal = (45, 25)):
 
-    dijkstra = Dijkstra(s_start, s_goal, 'None')
-    plot = plotting.Plotting(s_start, s_goal)
+
+    dijkstra = Dijkstra(s_start, s_goal, 'None', envType)
+    plot = plotting.Plotting(s_start, s_goal, envType)
 
     path, visited = dijkstra.searching()
     plot.animation(path, visited, "Dijkstra's")  # animation generate

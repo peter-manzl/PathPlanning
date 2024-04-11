@@ -15,11 +15,11 @@ from Search_2D import plotting, env
 
 
 class DStar:
-    def __init__(self, s_start, s_goal):
+    def __init__(self, s_start, s_goal, envType = 0):
         self.s_start, self.s_goal = s_start, s_goal
 
-        self.Env = env.Env()
-        self.Plot = plotting.Plotting(self.s_start, self.s_goal)
+        self.Env = env.Env(envType)
+        self.Plot = plotting.Plotting(self.s_start, self.s_goal, envType)
 
         self.u_set = self.Env.motions
         self.obs = self.Env.obs
@@ -293,10 +293,9 @@ class DStar:
             plt.plot(x[0], x[1], marker='s', color=color[self.count])
 
 
-def main():
-    s_start = (5, 5)
-    s_goal = (45, 25)
-    dstar = DStar(s_start, s_goal)
+def main(envType=0, s_start = (5, 5), s_goal = (45, 25)):
+    
+    dstar = DStar(s_start, s_goal, envType)
     dstar.run(s_start, s_goal)
 
 

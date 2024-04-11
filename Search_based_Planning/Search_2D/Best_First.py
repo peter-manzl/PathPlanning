@@ -53,12 +53,10 @@ class BestFirst(AStar):
         return self.extract_path(self.PARENT), self.CLOSED
 
 
-def main():
-    s_start = (5, 5)
-    s_goal = (45, 25)
+def main(envType = 0, s_start = (5, 5), s_goal = (45, 25)):
 
-    BF = BestFirst(s_start, s_goal, 'euclidean')
-    plot = plotting.Plotting(s_start, s_goal)
+    BF = BestFirst(s_start, s_goal, 'euclidean', envType)
+    plot = plotting.Plotting(s_start, s_goal, envType)
 
     path, visited = BF.searching()
     plot.animation(path, visited, "Best-first Searching")  # animation

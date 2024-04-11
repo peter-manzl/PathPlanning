@@ -15,11 +15,11 @@ from Search_2D import plotting, env
 
 
 class LPAStar:
-    def __init__(self, s_start, s_goal, heuristic_type):
+    def __init__(self, s_start, s_goal, heuristic_type, envType = 0):
         self.s_start, self.s_goal = s_start, s_goal
         self.heuristic_type = heuristic_type
 
-        self.Env = env.Env()
+        self.Env = env.Env(envType)
         self.Plot = plotting.Plotting(self.s_start, self.s_goal)
 
         self.u_set = self.Env.motions
@@ -244,11 +244,9 @@ class LPAStar:
             plt.plot(x[0], x[1], marker='s', color=color[self.count])
 
 
-def main():
-    x_start = (5, 5)
-    x_goal = (45, 25)
-
-    lpastar = LPAStar(x_start, x_goal, "Euclidean")
+def main(envType = 0, x_start = (5, 5), x_goal = (45, 25)):
+    
+    lpastar = LPAStar(x_start, x_goal, "Euclidean", envType)
     lpastar.run()
 
 

@@ -17,12 +17,12 @@ from Search_2D import plotting, env
 class AStar:
     """AStar set the cost + heuristics as the priority
     """
-    def __init__(self, s_start, s_goal, heuristic_type):
+    def __init__(self, s_start, s_goal, heuristic_type, envType = 0):
         self.s_start = s_start
         self.s_goal = s_goal
         self.heuristic_type = heuristic_type
 
-        self.Env = env.Env()  # class Env
+        self.Env = env.Env(envType)  # class Env
 
         self.u_set = self.Env.motions  # feasible input set
         self.obs = self.Env.obs  # position of obstacles
@@ -207,16 +207,15 @@ class AStar:
             return math.hypot(goal[0] - s[0], goal[1] - s[1])
 
 
-def main():
-    s_start = (5, 5)
-    s_goal = (45, 25)
-
-    astar = AStar(s_start, s_goal, "euclidean")
-    plot = plotting.Plotting(s_start, s_goal)
+def main(envType=0, s_start = (5, 5), s_goal = (45, 25)):
+    # plt.close('all')
+    
+    astar = AStar(s_start, s_goal, "euclidean", envType)
+    plot = plotting.Plotting(s_start, s_goal, envType)
 
     path, visited = astar.searching()
     plot.animation(path, visited, "A*")  # animation
-
+    # plt.title('A* visited {} points'.format(len(astar.CLOSED)))
     # path, visited = astar.searching_repeated_astar(2.5)               # initial weight e = 2.5
     # plot.animation_ara_star(path, visited, "Repeated A*")
 

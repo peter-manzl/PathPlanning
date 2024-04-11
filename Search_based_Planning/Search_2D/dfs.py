@@ -49,12 +49,10 @@ class DFS(AStar):
         return self.extract_path(self.PARENT), self.CLOSED
 
 
-def main():
-    s_start = (5, 5)
-    s_goal = (45, 25)
-
-    dfs = DFS(s_start, s_goal, 'None')
-    plot = plotting.Plotting(s_start, s_goal)
+def main(envType = 0, s_start = (5, 5), s_goal = (45, 25)):
+    
+    dfs = DFS(s_start, s_goal, 'None', envType)
+    plot = plotting.Plotting(s_start, s_goal, envType)
 
     path, visited = dfs.searching()
     visited = list(dict.fromkeys(visited))
