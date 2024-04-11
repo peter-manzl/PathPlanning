@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) +
                 "/../../Sampling_based_Planning/")
+sys.path.append('../../')
 
 from Sampling_based_Planning.rrt_2D import env, plotting, utils
 
@@ -24,7 +25,7 @@ class Node:
 
 
 class RrtConnect:
-    def __init__(self, s_start, s_goal, step_len, goal_sample_rate, iter_max):
+    def __init__(self, s_start, s_goal, step_len, goal_sample_rate, iter_max, envType):
         self.s_start = Node(s_start)
         self.s_goal = Node(s_goal)
         self.step_len = step_len
@@ -33,9 +34,9 @@ class RrtConnect:
         self.V1 = [self.s_start]
         self.V2 = [self.s_goal]
 
-        self.env = env.Env()
-        self.plotting = plotting.Plotting(s_start, s_goal)
-        self.utils = utils.Utils()
+        self.env = env.Env(envType)
+        self.plotting = plotting.Plotting(s_start, s_goal, envType)
+        self.utils = utils.Utils(envType)
 
         self.x_range = self.env.x_range
         self.y_range = self.env.y_range
@@ -142,11 +143,11 @@ class RrtConnect:
         return math.hypot(dx, dy), math.atan2(dy, dx)
 
 
-def main():
+def main(envType=2):
     x_start = (2, 2)  # Starting node
     x_goal = (49, 24)  # Goal node
 
-    rrt_conn = RrtConnect(x_start, x_goal, 0.8, 0.05, 5000)
+    rrt_conn = RrtConnect(x_start, x_goal, 0.8, 0.05, 8000, envType)
     path = rrt_conn.planning()
 
     rrt_conn.plotting.animation_connect(rrt_conn.V1, rrt_conn.V2, path, "RRT_CONNECT")

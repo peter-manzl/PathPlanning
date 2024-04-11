@@ -14,6 +14,7 @@ from scipy.spatial.transform import Rotation as Rot
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) +
                 "/../../Sampling_based_Planning/")
+sys.path.append('../../')
 
 from Sampling_based_Planning.rrt_2D import env, plotting, utils
 import CurvesGenerator.dubins_path as dubins
@@ -34,7 +35,7 @@ class Node:
 
 class DubinsRRTStar:
     def __init__(self, sx, sy, syaw, gx, gy, gyaw, vehicle_radius, step_len,
-                 goal_sample_rate, search_radius, iter_max):
+                 goal_sample_rate, search_radius, iter_max, envType=1):
         self.s_start = Node(sx, sy, syaw)
         self.s_goal = Node(gx, gy, gyaw)
         self.vr = vehicle_radius
@@ -44,8 +45,8 @@ class DubinsRRTStar:
         self.iter_max = iter_max
         self.curv = 1
 
-        self.env = env.Env()
-        self.utils = utils.Utils()
+        self.env = env.Env(envType)
+        self.utils = utils.Utils(envType)
 
         self.fig, self.ax = plt.subplots()
         self.delta = self.utils.delta
@@ -303,9 +304,10 @@ class DubinsRRTStar:
         return obs_cir
 
 
-def main():
-    sx, sy, syaw = 5, 5, np.deg2rad(90)
-    gx, gy, gyaw = 45, 25, np.deg2rad(0)
+def main(envType = 0, x_start = (5, 5), x_goal = (45, 25)):
+    
+    sx, sy, syaw = x_start[0], x_start[1], np.deg2rad(90)
+    gx, gy, gyaw = x_goal[0], x_goal[1], np.deg2rad(0)
     goal_sample_rate = 0.1
     search_radius = 50.0
     step_len = 30.0
@@ -313,7 +315,7 @@ def main():
     vehicle_radius = 2.0
 
     drrtstar = DubinsRRTStar(sx, sy, syaw, gx, gy, gyaw, vehicle_radius, step_len,
-                             goal_sample_rate, search_radius, iter_max)
+                             goal_sample_rate, search_radius, iter_max, envType)
     drrtstar.planning()
 
 

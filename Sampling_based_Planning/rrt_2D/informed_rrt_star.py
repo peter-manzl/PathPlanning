@@ -14,6 +14,7 @@ import matplotlib.patches as patches
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) +
                 "/../../Sampling_based_Planning/")
+sys.path.append('../../')
 
 from Sampling_based_Planning.rrt_2D import env, plotting, utils
 
@@ -27,7 +28,7 @@ class Node:
 
 class IRrtStar:
     def __init__(self, x_start, x_goal, step_len,
-                 goal_sample_rate, search_radius, iter_max):
+                 goal_sample_rate, search_radius, iter_max, envType = 1):
         self.x_start = Node(x_start)
         self.x_goal = Node(x_goal)
         self.step_len = step_len
@@ -35,9 +36,9 @@ class IRrtStar:
         self.search_radius = search_radius
         self.iter_max = iter_max
 
-        self.env = env.Env()
-        self.plotting = plotting.Plotting(x_start, x_goal)
-        self.utils = utils.Utils()
+        self.env = env.Env(envType)
+        self.plotting = plotting.Plotting(x_start, x_goal, envType)
+        self.utils = utils.Utils(envType)
 
         self.fig, self.ax = plt.subplots()
         self.delta = self.utils.delta
@@ -132,8 +133,8 @@ class IRrtStar:
     def Sample(self, c_max, c_min, x_center, C):
         if c_max < np.inf:
             r = [c_max / 2.0,
-                 math.sqrt(c_max ** 2 - c_min ** 2) / 2.0,
-                 math.sqrt(c_max ** 2 - c_min ** 2) / 2.0]
+                 math.sqrt(abs(c_max ** 2 - c_min ** 2)) / 2.0,
+                 math.sqrt(abs(c_max ** 2 - c_min ** 2)) / 2.0]
             L = np.diag(r)
 
             while True:
@@ -277,7 +278,7 @@ class IRrtStar:
 
     @staticmethod
     def draw_ellipse(x_center, c_best, dist, theta):
-        a = math.sqrt(c_best ** 2 - dist ** 2) / 2.0
+        a = math.sqrt(abs(c_best ** 2 - dist ** 2)) / 2.0
         b = c_best / 2.0
         angle = math.pi / 2.0 - theta
         cx = x_center[0]
@@ -285,7 +286,7 @@ class IRrtStar:
         t = np.arange(0, 2 * math.pi + 0.1, 0.1)
         x = [a * math.cos(it) for it in t]
         y = [b * math.sin(it) for it in t]
-        rot = Rot.from_euler('z', -angle).as_dcm()[0:2, 0:2]
+        rot = Rot.from_euler('z', -angle).as_matrix()[0:2, 0:2]
         fx = rot @ np.array([x, y])
         px = np.array(fx[0, :] + cx).flatten()
         py = np.array(fx[1, :] + cy).flatten()
@@ -293,11 +294,10 @@ class IRrtStar:
         plt.plot(px, py, linestyle='--', color='darkorange', linewidth=2)
 
 
-def main():
-    x_start = (18, 8)  # Starting node
-    x_goal = (37, 18)  # Goal node
+def main(envType = 1, x_start = (18, 8), x_goal = (37, 18)):
+    
 
-    rrt_star = IRrtStar(x_start, x_goal, 1, 0.10, 12, 1000)
+    rrt_star = IRrtStar(x_start, x_goal, 1, 0.10, 12, 3000, envType)
     rrt_star.planning()
 
 

@@ -12,7 +12,8 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) +
-                "/../../Sampling_based_Planning/")
+                "/../../Sampling_based_Planning/") 
+sys.path.append('../../')
 
 from Sampling_based_Planning.rrt_2D import env, plotting, utils
 
@@ -26,14 +27,14 @@ class Node:
 
 
 class FMT:
-    def __init__(self, x_start, x_goal, search_radius):
+    def __init__(self, x_start, x_goal, search_radius, envType = 1):
         self.x_init = Node(x_start)
         self.x_goal = Node(x_goal)
         self.search_radius = search_radius
 
-        self.env = env.Env()
-        self.plotting = plotting.Plotting(x_start, x_goal)
-        self.utils = utils.Utils()
+        self.env = env.Env(envType)
+        self.plotting = plotting.Plotting(x_start, x_goal, envType)
+        self.utils = utils.Utils(envType)
 
         self.fig, self.ax = plt.subplots()
         self.delta = self.utils.delta
@@ -208,9 +209,8 @@ class FMT:
         plt.axis("equal")
 
 
-def main():
-    x_start = (18, 8)  # Starting node
-    x_goal = (37, 18)  # Goal node
+def main(envType = 1, x_start = (18, 8), x_goal = (37, 18)):
+    
 
     fmt = FMT(x_start, x_goal, 40)
     fmt.Planning()

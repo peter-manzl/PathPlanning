@@ -11,6 +11,7 @@ import numpy as np
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) +
                 "/../../Sampling_based_Planning/")
 
+sys.path.append('../../')
 from Sampling_based_Planning.rrt_2D import env, plotting, utils
 
 
@@ -22,7 +23,7 @@ class Node:
 
 
 class Rrt:
-    def __init__(self, s_start, s_goal, step_len, goal_sample_rate, iter_max):
+    def __init__(self, s_start, s_goal, step_len, goal_sample_rate, iter_max, envType = 1):
         self.s_start = Node(s_start)
         self.s_goal = Node(s_goal)
         self.step_len = step_len
@@ -30,12 +31,13 @@ class Rrt:
         self.iter_max = iter_max
         self.vertex = [self.s_start]
 
-        self.env = env.Env()
-        self.plotting = plotting.Plotting(s_start, s_goal)
-        self.utils = utils.Utils()
+        self.env = env.Env(envType)
+        self.plotting = plotting.Plotting(s_start, s_goal, envType)
+        self.utils = utils.Utils(envType)
 
         self.x_range = self.env.x_range
         self.y_range = self.env.y_range
+        
         self.obs_circle = self.env.obs_circle
         self.obs_rectangle = self.env.obs_rectangle
         self.obs_boundary = self.env.obs_boundary
@@ -97,16 +99,17 @@ class Rrt:
         return math.hypot(dx, dy), math.atan2(dy, dx)
 
 
-def main():
-    x_start = (2, 2)  # Starting node
-    x_goal = (49, 24)  # Goal node
+def main(envType = 1, x_start = (2, 2), x_goal = (49, 24)):
+    # x_start: Starting node
+    # x_goal:  Goal node
 
-    rrt = Rrt(x_start, x_goal, 0.5, 0.05, 10000)
+    rrt = Rrt(x_start, x_goal, 0.5, 0.05, 10000, envType)
     path = rrt.planning()
 
     if path:
         rrt.plotting.animation(rrt.vertex, path, "RRT", True)
     else:
+        # rrt.plotting.animation(rrt.vertex, path, "RRT", True)
         print("No Path Found!")
 
 

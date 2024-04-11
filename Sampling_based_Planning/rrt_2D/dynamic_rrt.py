@@ -13,6 +13,7 @@ import matplotlib.patches as patches
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) +
                 "/../../Sampling_based_Planning/")
+sys.path.append('../../')
 
 from Sampling_based_Planning.rrt_2D import env, plotting, utils
 
@@ -33,7 +34,7 @@ class Edge:
 
 
 class DynamicRrt:
-    def __init__(self, s_start, s_goal, step_len, goal_sample_rate, waypoint_sample_rate, iter_max):
+    def __init__(self, s_start, s_goal, step_len, goal_sample_rate, waypoint_sample_rate, iter_max, envType = 1):
         self.s_start = Node(s_start)
         self.s_goal = Node(s_goal)
         self.step_len = step_len
@@ -45,9 +46,9 @@ class DynamicRrt:
         self.vertex_new = []
         self.edges = []
 
-        self.env = env.Env()
-        self.plotting = plotting.Plotting(s_start, s_goal)
-        self.utils = utils.Utils()
+        self.env = env.Env(envType )
+        self.plotting = plotting.Plotting(s_start, s_goal, envType )
+        self.utils = utils.Utils(envType)
         self.fig, self.ax = plt.subplots()
 
         self.x_range = self.env.x_range
@@ -330,11 +331,11 @@ class DynamicRrt:
         plt.pause(0.01)
 
 
-def main():
-    x_start = (2, 2)  # Starting node
-    x_goal = (49, 24)  # Goal node
+def main(envType=0, x_start=(2,2), x_goal = (49,24)):
+    # x_start = (2, 2)  # Starting node
+    # x_goal = (49, 24)  # Goal node
 
-    drrt = DynamicRrt(x_start, x_goal, 0.5, 0.1, 0.6, 5000)
+    drrt = DynamicRrt(x_start, x_goal, 0.5, 0.1, 0.6, 5000, envType)
     drrt.planning()
 
 

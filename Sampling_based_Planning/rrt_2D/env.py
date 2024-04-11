@@ -5,13 +5,28 @@ Environment for rrt_2D
 
 
 class Env:
-    def __init__(self):
+    def __init__(self, envType = 1):
+        print(envType)
         self.x_range = (0, 50)
         self.y_range = (0, 30)
         self.obs_boundary = self.obs_boundary()
-        self.obs_circle = self.obs_circle()
-        self.obs_rectangle = self.obs_rectangle()
+        if envType == 0: 
+            self.obs_circle = [[1,28,0]]    
+            self.obs_rectangle = [[45,1,0,0]]
 
+        if envType == 1: 
+            self.obs_circle = self.obs_circle()
+            self.obs_rectangle = self.obs_rectangle()
+        
+        if envType == 2: 
+            self.obs_circle = [[1,28,0]]    
+            self.obs_rectangle = []
+            for i, gap in zip([10,20,30,40], [25, 10, 25, 5]): 
+                
+                self.obs_rectangle += [[i,1,1,gap-2]]
+                self.obs_rectangle += [[i,gap+2,1,self.y_range[1] - gap-2]]
+                pass
+            
     @staticmethod
     def obs_boundary():
         obs_boundary = [

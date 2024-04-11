@@ -16,8 +16,8 @@ from Sampling_based_Planning.rrt_2D.rrt import Node
 
 
 class Utils:
-    def __init__(self):
-        self.env = env.Env()
+    def __init__(self, envType=1):
+        self.env = env.Env(envType)
 
         self.delta = 0.5
         self.obs_circle = self.env.obs_circle

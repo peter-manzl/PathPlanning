@@ -14,6 +14,7 @@ from scipy.spatial.transform import Rotation as Rot
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) +
                 "/../../Sampling_based_Planning/")
+sys.path.append('../../')
 
 from Sampling_based_Planning.rrt_2D import env, plotting, utils
 
@@ -40,15 +41,15 @@ class Tree:
 
 
 class BITStar:
-    def __init__(self, x_start, x_goal, eta, iter_max):
+    def __init__(self, x_start, x_goal, eta, iter_max, envType = 0):
         self.x_start = Node(x_start[0], x_start[1])
         self.x_goal = Node(x_goal[0], x_goal[1])
         self.eta = eta
         self.iter_max = iter_max
 
-        self.env = env.Env()
-        self.plotting = plotting.Plotting(x_start, x_goal)
-        self.utils = utils.Utils()
+        self.env = env.Env(envType)
+        self.plotting = plotting.Plotting(x_start, x_goal, envType)
+        self.utils = utils.Utils(envType)
 
         self.fig, self.ax = plt.subplots()
 
@@ -188,8 +189,8 @@ class BITStar:
 
     def SampleEllipsoid(self, m, cMax, cMin, xCenter, C):
         r = [cMax / 2.0,
-             math.sqrt(cMax ** 2 - cMin ** 2) / 2.0,
-             math.sqrt(cMax ** 2 - cMin ** 2) / 2.0]
+             math.sqrt(abs(cMax ** 2 - cMin ** 2)) / 2.0,
+             math.sqrt(abs(cMax ** 2 - cMin ** 2)) / 2.0]
         L = np.diag(r)
 
         ind = 0
@@ -379,7 +380,7 @@ class BITStar:
         t = np.arange(0, 2 * math.pi + 0.1, 0.2)
         x = [a * math.cos(it) for it in t]
         y = [b * math.sin(it) for it in t]
-        rot = Rot.from_euler('z', -angle).as_dcm()[0:2, 0:2]
+        rot = Rot.from_euler('z', -angle).as_matrix()[0:2, 0:2]
         fx = rot @ np.array([x, y])
         px = np.array(fx[0, :] + cx).flatten()
         py = np.array(fx[1, :] + cy).flatten()
@@ -387,13 +388,12 @@ class BITStar:
         plt.plot(px, py, linestyle='--', color='darkorange', linewidth=2)
 
 
-def main():
-    x_start = (18, 8)  # Starting node
-    x_goal = (37, 18)  # Goal node
+def main(envType = 0, x_start = (18, 8), x_goal = (37, 18)):
+
     eta = 2
     iter_max = 200
     print("start!!!")
-    bit = BITStar(x_start, x_goal, eta, iter_max)
+    bit = BITStar(x_start, x_goal, eta, iter_max, envType)
     # bit.animation("Batch Informed Trees (BIT*)")
     bit.planning()
 
