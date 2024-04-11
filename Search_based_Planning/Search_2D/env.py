@@ -6,7 +6,6 @@ Env 2D
 
 class Env:
     def __init__(self, envType=0):
-        print("envType = ", envType)
         self.envType = envType
         self.x_range = 51  # size of background
         self.y_range = 31
