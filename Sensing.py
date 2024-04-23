@@ -51,9 +51,76 @@ def line_intersection(p1,p2, p3, p4):
     else: 
         return None
     
+def circle_line_intersection_point(point1, point2, xCircle, yCircle, r, flagDebug=False):
+    if flagDebug: 
+        plt.plot([point1[0],point2[0]], [point1[1],point2[1]], 'x-')
+        
+        pass
+    
+    if point2[0] - point1[0] < 1e-10: 
+        x = point2[0]
+        y_sq = r**2 - (x - xCircle)**2
+    else: 
+        k = (point2[1] - point1[1]) / (point2[0] - point1[0])    
+        b = point1[1] - k * point1[0]
+    
+        # Coefficients in the quadratic equation Ax^2 + Bx + C = 0
+        A = 1 + k**2
+        B = 2 * (k * b - k * yCircle - xCircle)
+        C = xCircle**2 + b**2 - 2 * b * yCircle + yCircle**2 - r**2
+        
+    # Calculate the discriminant
+    discriminant = B**2 - 4 * A * C
+    
+    if discriminant < 0:
+        return None
+    else:
+        # Calculate x coordinates of the intersection points
+        sqrt_discriminant = np.sqrt(discriminant)
+        x1 = (-B + sqrt_discriminant) / (2 * A)
+        x2 = (-B - sqrt_discriminant) / (2 * A)
+        
+        # Corresponding y coordinates
+        y1 = k * x1 + b
+        y2 = k * x2 + b
+        # print(discriminant, A, B)
+        if discriminant == 0:
+            return [x1, y1]
+        else:
+            r1 = [x1 - point1[0],  y1 - point1[1]]
+            r2 = [x2 - point1[0],  y2 - point1[1]]
+            rPoints = [point2[0] - point1[0], point2[1] - point1[1]]
+            # phi = np.arctan2(point2[1] - point1[1],point2[0] - point1[0])
+            
+            e = np.array([point2[0] - point1[0], point2[1] - point1[1]])
+            e = e / np.linalg.norm(e)     # unity vector
+            
+            
+            dir1 = (r1 / e)[0]
+            dir2 = (r2 / e)[0]
+            
+            # check if intersection is not between but outside of points
+            if np.linalg.norm(r1) > np.linalg.norm(rPoints): 
+                dir1 = -1 
+            if np.linalg.norm(r2) > np.linalg.norm(rPoints): 
+                dir2 = -1  
+                
+            if dir1 > 0 and dir2 < 0:
+                return [x1,y1]
+            elif dir1 > 0 and dir2 > 0: 
+                # both in direction of 2:
+                if dir1 > dir2: # further away!
+                    return [x2, y2]
+                else:
+                    return [x1,y1]
+            elif dir1 < 0 and dir2 > 0: 
+                return [x2,y2]
+            else: 
+                return None
+                
     
 class Robot():
-    def __init__(self, x0, y0, sensorLidar = {'dphi': 10, 'range': 10}, env = None): 
+    def __init__(self, x0, y0, sensorLidar = {'dphi': 10, 'range': 100}, env = None): 
          self.x0 = x0
          self.y0 = y0
          
@@ -76,6 +143,11 @@ class Robot():
         
         distCurrent = np.inf
         xCurrent = None
+        if phi == np.pi * 3/2: 
+            flagDebug = True
+        else: 
+            flagDebug = False
+            
         for x0, y0, dx, dy in self.env.obs_boundary + self.env.obs_rectangle:
             for point1, point2 in [([x0, y0], [x0+dx, y0]), 
                                     ([x0+dx, y0],  [x0+dx, y0+dy]),
@@ -89,11 +161,17 @@ class Robot():
                         distCurrent = myDistance
                         xCurrent = xC
         for x0, y0, r in self.env.obs_circle: 
-            pass
-        
+            xC = circle_line_intersection_point(pRobot, pMaxSensing, x0, y0, r, flagDebug)
+            
+            if not(xC is None): 
+                myDistance = np.linalg.norm(pRobot - np.array(xC))
+                if myDistance < distCurrent: 
+                    distCurrent = myDistance
+                    xCurrent = xC
+                    
         if verbose: 
             if not(xCurrent is None): 
-                print('dist: ', distCurrent)
+                print('phi: ', round(phi*180/np.pi, 2), 'dist: ', distCurrent)
                 plt.plot(xCurrent[0], xCurrent[1], 'bo')
                 plt.plot([pRobot[0], xCurrent[0]], [pRobot[1], xCurrent[1]], 'r--', alpha = self.alphaPlotLidar)
             else: 
@@ -116,11 +194,11 @@ class Robot():
             
 
 myEnv = env.Env(envType = 1)
-myRobot = Robot(2, 2.5, env=myEnv)
+myRobot = Robot(10, 22.5, env=myEnv)
 
 myEnv.plot(myRobot)
 myRobot.sense(True)
-# sys.exit()
+sys.exit()
 
 #%% 
 # import math
@@ -151,69 +229,8 @@ def find_circle_line_intersection(h, k, r, m, b):
         else:
             return [[x1, y1], [x2, y2]]
         
-def find_circle_line_intersection_point(point1, point2, xCircle, yCircle, r):
-    k = (point2[1] - point1[1]) / (point2[0] - point1[0])
-    b = point1[1] - k * point1[0]
-    
-    # Coefficients in the quadratic equation Ax^2 + Bx + C = 0
-    A = 1 + k**2
-    B = 2 * (k * b - k * yCircle - xCircle)
-    C = xCircle**2 + b**2 - 2 * b * yCircle + yCircle**2 - r**2
-    
-    # Calculate the discriminant
-    discriminant = B**2 - 4 * A * C
-    
-    if discriminant < 0:
-        return None
-    else:
-        # Calculate x coordinates of the intersection points
-        sqrt_discriminant = np.sqrt(discriminant)
-        x1 = (-B + sqrt_discriminant) / (2 * A)
-        x2 = (-B - sqrt_discriminant) / (2 * A)
-        
-        # Corresponding y coordinates
-        y1 = k * x1 + b
-        y2 = k * x2 + b
-        # print(discriminant, A, B)
-        if discriminant == 0:
-            return [x1, y1]
-        else:
-            if True: 
-                r1 = [x1 - point1[0],  y1 - point1[1]]
-                r2 = [x2 - point1[0],  y2 - point1[1]]
-                rPoints = [point2[0] - point1[0], point2[1] - point1[1]]
-                # phi = np.arctan2(point2[1] - point1[1],point2[0] - point1[0])
-                
-                e = np.array([point2[0] - point1[0], point2[1] - point1[1]])
-                e = e / np.linalg.norm(e)     # unity vector
-                
-                
-                dir1 = (r1 / e)[0]
-                dir2 = (r2 / e)[0]
-                
-                # check if intersection is not between but outside of points
-                if np.linalg.norm(r1) > np.linalg.norm(rPoints): 
-                    dir1 = -1 
-                if np.linalg.norm(r2) > np.linalg.norm(rPoints): 
-                    dir2 = -1  
-                    
-                if dir1 > 0 and dir2 < 0:
-                    return [x1,y1]
-                elif dir1 > 0 and dir2 > 0: 
-                    # both in direction of 2:
-                    if dir1 > dir2: # further away!
-                        return [x2, y2]
-                    else:
-                        return [x1,y1]
-                elif dir1 < 0 and dir2 > 0: 
-                    return [x2,y2]
-                else: 
-                    return None
-            else: 
-                
-            # plt.plot([point1[0], point1[0]+e[0]], [point1[1], point1[1]+e[1]], 'o--')
-            # print('l1:', l1, '\nl2:', l2, '\ne:', e)
-                return [[x1, y1], [x2, y2]]
+
+
 
 # Example usage
 # h, k, r = 0, 0, 5  # Circle center at (0,0) and radius 5
