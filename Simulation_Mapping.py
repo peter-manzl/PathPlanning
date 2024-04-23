@@ -156,10 +156,10 @@ maxDistance = 100 #max. distance of sensors; just large enough to reach everythi
           # numberOfSensors=100,angleStart=0, angleEnd=1.5*pi, inclination=0,
           # lineLength=1, storeInternal=True, color=color4lawngreen )
 mbs.variables['Lidar'] = [-pi*0.25, pi*0.25, 100]
-mbs.variables['LidarAngles'] = np.linspace(mbs.variables['Lidar'][0], mbs.variables['Lidar'][1], mbs.variables['Lidar'] [2])
+mbs.variables['LidarAngles'] = np.linspace(mbs.variables['Lidar'][1], mbs.variables['Lidar'][0], mbs.variables['Lidar'] [2])
 mbs.variables['R'] = []
 for phi in mbs.variables['LidarAngles']: 
-    mbs.variables['R']  += [RotationMatrixZ(phi-np.pi/2)[0:2, 0:2]]
+    mbs.variables['R']  += [RotationMatrixZ(phi+np.pi/2)[0:2, 0:2]]
 
 
 mbs.variables['sLidarList'] = AddLidar(mbs, generalContactIndex=ngc, positionOrMarker=markerCar1, minDistance=0, maxDistance=maxDistance, 
@@ -320,10 +320,10 @@ def ComputeVelocity(t):
     f=1
     if t < 2:
       vel = [f,0,0]
-    elif t < 4:
-      vel = [0,f,0]
-    elif t < 16:
-      vel = [0,0,-0.125*np.pi/3]
+    elif t < 5:
+      vel = [-f*0,f,0]
+    elif t < 20:
+      vel = [0,0,-0.125*np.pi]
     elif t < 20:
       vel = [-f,0,0]
     return vel
@@ -362,7 +362,7 @@ def GetCurrentData(mbs, Rot, pos):
     data = np.zeros([mbs.variables['nLidar'] , 2])
     RotGL = RotationMatrixZ(np.pi/2*0)[0:2, 0:2]
     for i, sensor in enumerate(mbs.variables['sLidarList']): 
-        data[i,:] =  RotGL @ pos[0:2] + Rot[0:2,0:2].T @ mbs.variables['R'][i] @ mbs.GetSensorValues(sensor).tolist() #  + [0.32]
+        data[i,:] =  RotGL @ pos[0:2] + Rot[0:2,0:2] @ mbs.variables['R'][i] @ mbs.GetSensorValues(sensor).tolist() #  + [0.32]
     return data
 
 
@@ -370,6 +370,8 @@ def PreStepUF(mbs, t):
     if (t - mbs.variables['tLast']) > mbs.variables['dtLidar']: 
         # print(t)
         mbs.variables['tLast'] += mbs.variables['dtLidar']
+        
+        # position and rotation taken from the gloabl data --> accurate! 
         Rot = mbs.GetSensorValues(mbs.variables['sRot']).reshape([3,3])
         pos = mbs.GetSensorValues(mbs.variables['sPos'])
 
