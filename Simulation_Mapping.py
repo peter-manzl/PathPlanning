@@ -371,14 +371,17 @@ for i in range(4):
    
 def GetCurrentData(mbs, Rot, pos): 
     data = np.zeros([mbs.variables['nLidar'] , 2])
-    RotGL = RotationMatrixZ(np.pi/2*0)[0:2, 0:2]
+    # RotGL = RotationMatrixZ(np.pi/2*0)[0:2, 0:2]
     for i, sensor in enumerate(mbs.variables['sLidarList']): 
-        data[i,:] =  RotGL @ pos[0:2] + Rot[0:2,0:2] @ mbs.variables['R'][i] @ mbs.GetSensorValues(sensor).tolist() #  + [0.32]
+        data[i,:] =  pos[0:2] + Rot[0:2,0:2] @ mbs.variables['R'][i] @ mbs.GetSensorValues(sensor).tolist() #  + [0.32]
+        
+        
     return data
 
 #%% 
 flagReadPosRot = False
 flagOdometry = True
+flagLidarNoise = True
 
 mbs.variables['wWheels'] = np.zeros([4])
 mbs.variables['posOdom'], mbs.variables['rotOdom'], mbs.variables['tLast'] = np.array([0,0], dtype=np.float64), 0, 0
@@ -410,11 +413,11 @@ def PreStepUF(mbs, t):
         vOdom = WheelVelocities2MecanumXYphi(mbs.variables['wWheels'], rWheel, wCar, lCar)
         mbs.variables['rotOdom'] += vOdom[-1] * dt  # (t - mbs.variables['tLast'])
         mbs.variables['posOdom'] += Rot2D(mbs.variables['rotOdom']) @ vOdom[0:2] * dt
-        
         # print('pos: ', mbs.variables['posOdom'])
+        
     if (t - mbs.variables['tLast']) > mbs.variables['dtLidar']: 
-        # print(t)
         mbs.variables['tLast'] += mbs.variables['dtLidar']
+        
         if flagReadPosRot: 
             # position and rotation taken from the gloabl data --> accurate! 
             Rot = mbs.GetSensorValues(mbs.variables['sRot']).reshape([3,3])
@@ -423,40 +426,45 @@ def PreStepUF(mbs, t):
             Rot = Rot2D(mbs.variables['rotOdom'])
             pos = mbs.variables['posOdom']
         data = GetCurrentData(mbs, Rot, pos)
-        # plt.figure('Lidar')
-        print('data at t: ', round(t, 2))
-        # print('pos: ', np.round(pos, 2))
-        # print('R global:\n', np.round(Rot, 2))
-        plt.plot(data[:,0], data[:,1], 'x', label='data at t=' + str(round(t, 2)))
-        plt.plot(pos[0], pos[1], 'o')
+        k = int(t/mbs.variables['dtLidar'])
+        print('data {} at t: {}'.format(k, round(t, 2)))
+        mbs.variables['lidarDataHistory'][k,:,:] = data
+        mbs.variables['posHistory'][k] = pos
+        mbs.variables['RotHistory'][k] = Rot
+        # plt.plot(data[:,0], data[:,1], 'x', label='data at t=' + str(round(t, 2)))
+        # plt.plot(pos[0], pos[1], 'o')
     return True
+
+
+h=0.002
+tEnd = 0.5
+if useGraphics:
+    tEnd = 14 + h
+
 
 mbs.variables['tLast'] = 0
 mbs.variables['dtLidar'] = 1 #50e-3
 mbs.variables['nLidar'] = len(mbs.variables['sLidarList'])
+nMeasure = int(tEnd/mbs.variables['dtLidar']) + 1
+mbs.variables['lidarDataHistory'] = np.zeros([nMeasure, mbs.variables['nLidar'], 2])
+mbs.variables['RotHistory'] = np.zeros([nMeasure, 2,2])
+mbs.variables['RotHistory'][0] = np.eye(2)
+
+mbs.variables['posHistory'] = np.zeros([nMeasure, 2])
 mbs.SetPreStepUserFunction(PreStepUF)
 mbs.Assemble()
-# print('end')
 data0 = GetCurrentData(mbs, mbs.GetSensorValues(mbs.variables['sRot']).reshape([3,3]), mbs.GetSensorValues(mbs.variables['sPos']))
+mbs.variables['lidarDataHistory'][0] = data0
 #%% 
 
-plt.figure('Lidar')
-plt.plot(data0[:,0], data0[:,1], 'x')
-plt.title('lidar data: using ' + 'accurate data' * bool(flagReadPosRot) + 'inaccurate Odometry' * bool(not(flagReadPosRot)))
-plt.grid()
-plt.axis('equal')
-
+# 
 # import sys
 # sys.exit()
 
 #%% 
 simulationSettings = exu.SimulationSettings() #takes currently set values or default values
 
-tEnd = 0.5
-if useGraphics:
-    tEnd = 24
 
-h=0.002
 
 simulationSettings.timeIntegration.numberOfSteps = int(tEnd/h)
 simulationSettings.timeIntegration.endTime = tEnd
@@ -516,11 +524,32 @@ if useGraphics:
     SC.WaitForRenderEngineStopFlag()
     exu.StopRenderer() #safely close rendering window!
 
+
+#%% 
+if True: 
+    plt.close('all')
+    plt.figure('Lidar')
+    from matplotlib import colors as mcolors
+    myColors = dict(mcolors.BASE_COLORS, **mcolors.CSS4_COLORS)
+    col1 = mcolors.to_rgb(myColors['red'])
+    col2 = mcolors.to_rgb(myColors['green'])    
+    for i in range(0, mbs.variables['lidarDataHistory'].shape[0]):   
+        col_i = np.array(col1)* (1 - i/(nMeasure-1)) + np.array(col2)* (i/(nMeasure-1))
+        plt.plot(mbs.variables['lidarDataHistory'][i,:,0], mbs.variables['lidarDataHistory'][i,:,1], 
+                             'x', label='lidar m' + str(i), color=col_i.tolist())
+        e1 = mbs.variables['RotHistory'][i][:,1]
+        p = mbs.variables['posHistory'][i]
+        plt.plot(p[0], p[1], 'o', color=col_i)
+        plt.arrow(p[0], p[1], e1[0], e1[1], color=col_i, head_width=0.2)
+        
+    plt.title('lidar data: using ' + 'accurate data' * bool(flagReadPosRot) + 'inaccurate Odometry' * bool(not(flagReadPosRot)))
+    plt.grid()
+    plt.axis('equal')
+
+
 ##++++++++++++++++++++++++++++++++++++++++++++++q+++++++
 #plot results
 # if useGraphics and False:
-    
-    
 #     mbs.PlotSensor(sTrail, componentsX=[0]*4, components=[1]*4, title='wheel trails', closeAll=True,
 #                markerStyles=['x ','o ','^ ','D '], markerSizes=12)
 #     mbs.PlotSensor(sForce, components=[1]*4, title='wheel forces')
