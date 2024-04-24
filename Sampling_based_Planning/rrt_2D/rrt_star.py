@@ -64,7 +64,10 @@ class RrtStar:
 
         index = self.search_goal_parent()
         self.path = self.extract_path(self.vertex[index])
-
+        lastLen = 0
+        for x in self.path[1:]: 
+            lastLen += np.linalg.norm(x)
+        print('path: ', self.path)
         self.plotting.animation(self.vertex, self.path, "rrt*, N = " + str(self.iter_max))
 
     def new_state(self, node_start, node_goal):
@@ -174,9 +177,9 @@ class RrtStar:
         return math.hypot(dx, dy), math.atan2(dy, dx)
 
 
-def main(envType=1, x_start = (18, 8), x_goal= (37, 18)):
+def main(envType=1, x_start = (18, 8), x_goal= (37, 18), N= 1000):
 
-    rrt_star = RrtStar(x_start, x_goal, 10, 0.10, 20, 4000, envType)
+    rrt_star = RrtStar(x_start, x_goal, 10, 0.10, 20, N, envType)
     rrt_star.planning()
 
 

@@ -143,9 +143,9 @@ class RrtConnect:
         return math.hypot(dx, dy), math.atan2(dy, dx)
 
 
-def main(envType=2):
-    x_start = (2, 2)  # Starting node
-    x_goal = (49, 24)  # Goal node
+def main(envType=2, x_start= [2, 2], x_goal=[49,24]):
+    # x_start = (  # Starting node
+    # x_goal = (49, 24)  # Goal node
 
     rrt_conn = RrtConnect(x_start, x_goal, 0.8, 0.05, 8000, envType)
     path = rrt_conn.planning()
