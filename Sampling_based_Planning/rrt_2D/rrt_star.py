@@ -64,10 +64,8 @@ class RrtStar:
 
         index = self.search_goal_parent()
         self.path = self.extract_path(self.vertex[index])
-        lastLen = 0
-        for x in self.path[1:]: 
-            lastLen += np.linalg.norm(x)
-        print('path: ', self.path)
+
+        
         self.plotting.animation(self.vertex, self.path, "rrt*, N = " + str(self.iter_max))
 
     def new_state(self, node_start, node_goal):

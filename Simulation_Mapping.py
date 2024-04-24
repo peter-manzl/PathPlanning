@@ -159,7 +159,7 @@ maxDistance = 100 #max. distance of sensors; just large enough to reach everythi
 # AddLidar(mbs, generalContactIndex=ngc, positionOrMarker=markerCar2, minDistance=0, maxDistance=maxDistance, 
           # numberOfSensors=100,angleStart=0, angleEnd=1.5*pi, inclination=0,
           # lineLength=1, storeInternal=True, color=color4lawngreen )
-mbs.variables['Lidar'] = [-pi*0.25, pi*0.25, 100]
+mbs.variables['Lidar'] = [-pi*0.25, pi*0.25, 50]
 mbs.variables['LidarAngles'] = np.linspace(mbs.variables['Lidar'][1], mbs.variables['Lidar'][0], mbs.variables['Lidar'] [2])
 mbs.variables['R'] = []
 for phi in mbs.variables['LidarAngles']: 
@@ -327,14 +327,14 @@ def ComputeVelocity(t):
     f=1
     if t < 3:
       # f = SmoothStep(t, 0, 1, 0, 1)
-      vel = [f,0,0]
+      vel = [1.2*f,0,0]
     elif t < 6:
-        
-      vel = [-f*0,f,0]
+      vel = [0,1.4*f,0]
     elif t < 20:
-      vel = [0,0,-0.125*np.pi]
-    elif t < 20:
-      vel = [-f,0,0]
+      vel = [0*f/3,0*-f/3,-0.125*np.pi]
+    elif t < 24:
+        vel = [0,0,0]
+      # vel = [0.5*f,0.5*f,0]
     return vel
 
 
@@ -346,7 +346,7 @@ def ComputeVelocity(t):
 # |    |   |
 # | W0 +---+ W1
 # +---->X, wCar
-pControl = 5000
+pControl = 500
 mbs.variables['wheelMotor'] = []
 mbs.variables['loadWheel'] = []
 posWheel = [[-wCar/2, -lCar/2], [wCar/2, -lCar/2], [-wCar/2, lCar/2], [wCar/2, lCar/2]]
@@ -429,8 +429,8 @@ def PreStepUF(mbs, t):
         k = int(t/mbs.variables['dtLidar'])
         print('data {} at t: {}'.format(k, round(t, 2)))
         mbs.variables['lidarDataHistory'][k,:,:] = data
-        mbs.variables['posHistory'][k] = pos
-        mbs.variables['RotHistory'][k] = Rot
+        mbs.variables['posHistory'][k] = pos[0:2]
+        mbs.variables['RotHistory'][k] = Rot[0:2,0:2]
         # plt.plot(data[:,0], data[:,1], 'x', label='data at t=' + str(round(t, 2)))
         # plt.plot(pos[0], pos[1], 'o')
     return True
@@ -439,7 +439,7 @@ def PreStepUF(mbs, t):
 h=0.002
 tEnd = 0.5
 if useGraphics:
-    tEnd = 14 + h
+    tEnd = 22 + h
 
 
 mbs.variables['tLast'] = 0
@@ -476,7 +476,7 @@ simulationSettings.displayStatistics = False
 
 simulationSettings.timeIntegration.generalizedAlpha.useIndex2Constraints = True
 simulationSettings.timeIntegration.generalizedAlpha.useNewmark = True
-simulationSettings.timeIntegration.generalizedAlpha.spectralRadius = 0.5#0.5
+simulationSettings.timeIntegration.generalizedAlpha.spectralRadius = 0.5 # 0.5
 simulationSettings.timeIntegration.generalizedAlpha.computeInitialAccelerations=True
 
 simulationSettings.timeIntegration.newton.useModifiedNewton = True
@@ -545,7 +545,8 @@ if True:
     plt.title('lidar data: using ' + 'accurate data' * bool(flagReadPosRot) + 'inaccurate Odometry' * bool(not(flagReadPosRot)))
     plt.grid()
     plt.axis('equal')
-
+    plt.xlabel('x in m')
+    plt.ylabel('y in m')
 
 ##++++++++++++++++++++++++++++++++++++++++++++++q+++++++
 #plot results
