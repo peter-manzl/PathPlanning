@@ -176,13 +176,6 @@ if 0:
               numberOfSensors=100,angleStart=0, angleEnd=1.5*pi, inclination=-4/180*pi,
               lineLength=1, storeInternal=True, color=color4grey )
     
-    AddLidar(mbs, generalContactIndex=ngc, positionOrMarker=markerCar2, minDistance=0, maxDistance=maxDistance, 
-              numberOfSensors=100,angleStart=0, angleEnd=1.5*pi, inclination= 4/180*pi,
-              lineLength=1, storeInternal=True, color=color4grey )
-    
-    AddLidar(mbs, generalContactIndex=ngc, positionOrMarker=markerCar2, minDistance=0, maxDistance=maxDistance, 
-              numberOfSensors=100,angleStart=0, angleEnd=1.5*pi, inclination= 8/180*pi,
-              lineLength=1, storeInternal=True, color=color4grey )
     
     AddLidar(mbs, generalContactIndex=ngc, positionOrMarker=markerCar2, minDistance=0, maxDistance=maxDistance, 
               numberOfSensors=100,angleStart=0, angleEnd=1.5*pi, inclination=12/180*pi,
@@ -269,9 +262,9 @@ for iWheel in range(nWheels):
 
     nGeneric = mbs.AddNode(NodeGenericData(initialCoordinates=[0,0,0], numberOfDataCoordinates=3))
     oRolling = mbs.AddObject(ObjectConnectorRollingDiscPenalty(markerNumbers=[mGround, mWheel], nodeNumber = nGeneric,
-                                                  discRadius=rWheel, dryFriction=[1.,0.], dryFrictionAngle=frictionAngle,
+                                                  discRadius=rWheel, dryFriction=[1.,0.001], dryFrictionAngle=frictionAngle,
                                                   dryFrictionProportionalZone=1e-1, 
-                                                  rollingFrictionViscous=0.2*0,
+                                                  rollingFrictionViscous=0.01,
                                                   contactStiffness=kRolling, contactDamping=dRolling,
                                                   visualization=VObjectConnectorRollingDiscPenalty(discWidth=wWheel, color=color4blue)))
     oRollingDiscs += [oRolling]
@@ -322,50 +315,39 @@ def WheelVelocities2MecanumXYphi(w, R, Lx, Ly):
 
 
 trajectory = Trajectory(initialCoordinates=[0   ,0   ,0], initialTime=0)
-trajectory.Add(ProfileConstantAcceleration([0 ,0   ,0], 10))
-trajectory.Add(ProfileConstantAcceleration([3.6 ,0   ,0], 3))
-trajectory.Add(ProfileConstantAcceleration([3.6 ,4.2 ,0], 4))
+trajectory.Add(ProfileConstantAcceleration([3.6 ,0   ,0], 5))
+trajectory.Add(ProfileConstantAcceleration([3.6 ,0   ,0], 0.5))
+trajectory.Add(ProfileConstantAcceleration([3.6 ,4.2 ,0], 5))
+trajectory.Add(ProfileConstantAcceleration([3.6 ,4.2 ,0], 0.5))
 trajectory.Add(ProfileConstantAcceleration([3.6 ,4.2 ,2*np.pi], 10))
 
 
-# ^Y, lCar
-# | W2 +---+ W3
-# |    |   |
-# |    | + | car center point
-# |    |   |
-# | W0 +---+ W1
-# +---->X, wCar
+
 pControl = 500
 mbs.variables['wheelMotor'] = []
 mbs.variables['loadWheel'] = []
-posWheel = [[-wCar/2, -lCar/2], [wCar/2, -lCar/2], [-wCar/2, lCar/2], [wCar/2, lCar/2]]
 for i in range(4):
-    mbs.variables['loadWheel'] += [mbs.AddLoad(Torque(markerNumber=markerWheels[i],
-                                   loadVector=[0,0,0], bodyFixed = True))]
-    # mbs.variables['loadWheel'] += [mbs.AddObject(CoordinateSpringDamperExt(markerNumbers=[markerCar, markerWheels[i]], 
-                                                    # ))]
-    nData = mbs.AddNode(NodeGenericData(numberOfDataCoordinates = 1, initialCoordinates=[0]))
-    # marerCarAxle = mbs.Add
-    # RM0 = RotationMatrixY(-np.pi/2)
-    RM0 = RotXYZ2RotationMatrix([-np.pi/2, 0, -np.pi/2])
-    RM1 = RotationMatrixY(-np.pi/2) # np.eye(3)
-    mAxle = mbs.AddMarker(MarkerBodyRigid(bodyNumber=bCar, localPosition = posWheel[i] + [0]))
-    # mbs.variables['wheelMotor'] += [mbs.AddObject(TorsionalSpringDamper(name='Wheel{}Motor'.format(i), 
-    #                                         # mobileRobotBackDic['mAxlesList'][i]
-    #                                         markerNumbers=[mAxle, markerWheels[i]],
-    #                                         nodeNumber= nData, # for continuous Rotation
-    #                                         stiffness = pControl, damping = pControl*0.05, 
-    #                                         rotationMarker0=RM0, 
-    #                                         rotationMarker1=RM1))]
+    # Torsional springdamper always acts in z-Axis
+    RM1 = RotationMatrixY(np.pi/2) 
+    RM0 = RotationMatrixY(np.pi/2)
+    nData = mbs.AddNode(NodeGenericData(numberOfDataCoordinates = 1, initialCoordinates=[0])) # records multiples of 2*pi
+    mbs.variables['wheelMotor'] += [mbs.AddObject(TorsionalSpringDamper(name='Wheel{}Motor'.format(i), 
+                                            # mobileRobotBackDic['mAxlesList'][i]
+                                            markerNumbers=[markerCarAxles[i], markerWheels[i]],
+                                            nodeNumber= nData, # for continuous Rotation
+                                            stiffness = 0, damping = pControl*0.2, 
+                                            rotationMarker0=RM0, 
+                                            rotationMarker1=RM1))]
 #%% 
-flagReadPosRot = True
+flagReadPosRot = False
 flagOdometry = True
 flagLidarNoise = True
 lidarNoiseLevel = [0.05, 0.01]
+flagVelNoise = True
+velNoiseLevel = 0.025
   
 def GetCurrentData(mbs, Rot, pos): 
     data = np.zeros([mbs.variables['nLidar'] , 2])
-    # RotGL = RotationMatrixZ(np.pi/2*0)[0:2, 0:2]
     if not(flagLidarNoise): 
         for i, sensor in enumerate(mbs.variables['sLidarList']): 
             data[i,:] =  pos[0:2] + Rot[0:2,0:2] @ mbs.variables['R'][i] @ mbs.GetSensorValues(sensor).tolist() #  + [0.32]
@@ -378,36 +360,28 @@ def GetCurrentData(mbs, Rot, pos):
     return data
 
 
-
-mbs.variables['wWheels'] = np.zeros([4])
-mbs.variables['posOdom'], mbs.variables['rotOdom'], mbs.variables['tLast'] = np.array([0,0], dtype=np.float64), 0, 0
-mbs.variables['phiWheels'] = np.zeros(4)
-
+#%% PreStepUF is called before every step. There odometry is calculated, velocity
 def PreStepUF(mbs, t):
     # using Prestep instead of UFLoad reduced simulation time fopr 24 seconds from 6.11887 to 4.02554 seconds (~ 34%)
     u, v, a = trajectory.Evaluate(t) # 
-    # v2 = ComputeVelocity(t)
     wDesired = MecanumXYphi2WheelVelocities(v[0],v[1],v[2],rWheel,wCar,lCar)
+    dt = mbs.sys['dynamicSolver'].it.currentStepSize # for integration of values
     
     # wheel control
     for iWheel in range(4):
-        # mbs.AddLoad(Torque(markerNumber=markerWheels[i],loadVector=[ i,0,0], bodyFixed = True, loadVectorUserFunction=UFtorque))
         wCurrent = mbs.GetSensorValues(sAngularVelWheels[iWheel])[0] #local x-axis = wheel axis
-        cTorque = pControl * (wDesired[iWheel] - wCurrent)
-        # phiCurrent = mbs.GetObjectParameter(mbs.variables['wheelMotor'][i], 'offset')
-        # mbs.variables['phiWheels'][iWheel] += wDesired[i] * x(t - mbs.variables['tLast'])
-        # mbs.SetObjectParameter(mbs.variables['wheelMotor'][i], 'offset', mbs.variables['phiWheels'][iWheel])
-        # mbs.SetObjectParameter(mbs.variables['wheelMotor'][i], 'velocityOffset', wDesired[i])
-        # mbs.SetObjectParameter(mbs.variables['wheelMotor'][i], 'torque', 50)
-        mbs.SetLoadParameter(mbs.variables['loadWheel'][iWheel], 'loadVector', [cTorque, 0, 0])
-        mbs.variables['wWheels'][iWheel] = wCurrent 
-        # print("i = {}, wCurrent: {}, wDesired: {}".format(iWheel, round(wCurrent, 3), round(wDesired[iWheel], 3)))
+        mbs.variables['wWheels'][iWheel] = wCurrent # save current wheel velocity
+        mbs.SetObjectParameter(mbs.variables['wheelMotor'][iWheel], 'velocityOffset', wDesired[iWheel]) # set wheel velocity for control
+        
     # calculate odometry
-     
     if flagOdometry: 
         # odometry: vOdom = pinv(J) @ wWheels
-        dt = mbs.sys['dynamicSolver'].it.currentStepSize 
-        vOdom = WheelVelocities2MecanumXYphi(mbs.variables['wWheels'], rWheel, wCar, lCar)
+        # obtain position from vOdom by integration
+        if flagVelNoise: 
+            vOdom = WheelVelocities2MecanumXYphi(mbs.variables['wWheels'] + np.random.normal(0, velNoiseLevel, 4), 
+                                                 rWheel, wCar, lCar)
+        else: 
+            vOdom = WheelVelocities2MecanumXYphi(mbs.variables['wWheels'], rWheel, wCar, lCar)
         mbs.variables['rotOdom'] += vOdom[-1] * dt  # (t - mbs.variables['tLast'])
         mbs.variables['posOdom'] += Rot2D(mbs.variables['rotOdom']) @ vOdom[0:2] * dt
         # print('pos: ', mbs.variables['posOdom'])
@@ -432,13 +406,12 @@ def PreStepUF(mbs, t):
         # plt.plot(pos[0], pos[1], 'o')
     return True
 
-
-h=0.002
-tEnd = 0.5
-if useGraphics:
-    tEnd = 22 + h
-
-
+# allocate dictionary values
+h=0.005
+tEnd = trajectory.GetTimes()[-1] + 2 + h # add +h to call preStepFunction at tEnd
+mbs.variables['wWheels'] = np.zeros([4])
+mbs.variables['posOdom'], mbs.variables['rotOdom'], mbs.variables['tLast'] = np.array([0,0], dtype=np.float64), 0, 0
+mbs.variables['phiWheels'] = np.zeros(4)
 mbs.variables['tLast'] = 0
 mbs.variables['dtLidar'] = 1 #50e-3
 mbs.variables['nLidar'] = len(mbs.variables['sLidarList'])
@@ -446,17 +419,13 @@ nMeasure = int(tEnd/mbs.variables['dtLidar']) + 1
 mbs.variables['lidarDataHistory'] = np.zeros([nMeasure, mbs.variables['nLidar'], 2])
 mbs.variables['RotHistory'] = np.zeros([nMeasure, 2,2])
 mbs.variables['RotHistory'][0] = np.eye(2)
-
 mbs.variables['posHistory'] = np.zeros([nMeasure, 2])
+
 mbs.SetPreStepUserFunction(PreStepUF)
 mbs.Assemble()
 data0 = GetCurrentData(mbs, mbs.GetSensorValues(mbs.variables['sRot']).reshape([3,3]), mbs.GetSensorValues(mbs.variables['sPos']))
 mbs.variables['lidarDataHistory'][0] = data0
-#%% 
 
-# 
-# import sys
-# sys.exit()
 
 #%% 
 simulationSettings = exu.SimulationSettings() #takes currently set values or default values
@@ -465,7 +434,6 @@ simulationSettings = exu.SimulationSettings() #takes currently set values or def
 
 simulationSettings.timeIntegration.numberOfSteps = int(tEnd/h)
 simulationSettings.timeIntegration.endTime = tEnd
-#simulationSettings.solutionSettings.solutionWritePeriod = 0.01
 simulationSettings.solutionSettings.sensorsWritePeriod = 0.1
 simulationSettings.timeIntegration.verboseMode = 1
 simulationSettings.displayComputationTime = False
@@ -513,9 +481,6 @@ if useGraphics:
 
 mbs.SolveDynamic(simulationSettings)
 
-p0=mbs.GetObjectOutputBody(bCar, exu.OutputVariableType.Position, localPosition=[0,0,0])
-
-plt.legend()
 
 if useGraphics:
     SC.WaitForRenderEngineStopFlag()
@@ -523,9 +488,11 @@ if useGraphics:
 
 
 #%% 
+p0=mbs.GetObjectOutputBody(bCar, exu.OutputVariableType.Position, localPosition=[0,0,0])
+
 if True: 
-    plt.close('all')
-    plt.figure('Lidar')
+    # plt.close('all')
+    plt.figure()
     from matplotlib import colors as mcolors
     myColors = dict(mcolors.BASE_COLORS, **mcolors.CSS4_COLORS)
     col1 = mcolors.to_rgb(myColors['red'])

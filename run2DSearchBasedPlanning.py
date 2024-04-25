@@ -21,19 +21,23 @@ from rrt_2D import fast_marching_trees, informed_rrt_star
 from rrt_2D import rrt, rrt_connect, rrt_star, rrt_star_smart
 
 if __name__ == "__main__": 
-    envType = 0
+    envType = 1
     s_start = (5,5)
     s_end = (45, 25)
     
-    algorithm_list = [batch_informed_trees, dubins_rrt_star, dynamic_rrt, extended_rrt , 
-                      fast_marching_trees, informed_rrt_star, 
-                      rrt, rrt_connect, rrt_star, rrt_star_smart]
+    algorithm_list = [
+        rrt_star, 
+        # batch_informed_trees, dubins_rrt_star, dynamic_rrt, extended_rrt , 
+        #               fast_marching_trees, informed_rrt_star, 
+        #               rrt, rrt_connect, rrt_star, rrt_star_smart
+          ]
 
     
-    # sys.exit()
+   
     # create new windows for all algorithms
     for lib in algorithm_list: 
-        plt.figure()
+        # plt.figure()
         print('running: ', lib.__name__)
         lib.main(envType, s_start, s_end)
-
+        
+    
