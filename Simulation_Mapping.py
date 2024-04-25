@@ -14,6 +14,7 @@ import exudyn
 import exudyn as exu
 from exudyn.utilities import *
 from exudyn.robotics.utilities import AddLidar
+from exudyn.robotics.motion import Trajectory, ProfileConstantAcceleration
 
 import numpy as np
 from math import sin, cos, tan
@@ -153,7 +154,7 @@ ngc = mbs.CreateDistanceSensorGeometry(meshPoints, meshTrigs, rigidBodyMarkerInd
 #                                     selectedTypeIndex=exu.ContactTypeIndex.IndexTrigsRigidBodyBased,
 #                                     color=color4red)
 
-maxDistance = 100 #max. distance of sensors; just large enough to reach everything; take care, in zoom all it will show this large area
+maxDistance = 20 #max. distance of sensors; just large enough to reach everything; take care, in zoom all it will show this large area
 
 
 # AddLidar(mbs, generalContactIndex=ngc, positionOrMarker=markerCar2, minDistance=0, maxDistance=maxDistance, 
@@ -317,26 +318,14 @@ def WheelVelocities2MecanumXYphi(w, R, Lx, Ly):
                           [-1,-1,-LxLy2],
                           [-1,-1, LxLy2],
                           [ 1,-1,-LxLy2]])    
-    # return mat @ [xVel, yVel, angVel]
     return np.linalg.pinv(mat) @ w
 
 
-#compute velocity trajectory
-def ComputeVelocity(t):
-    vel = [0,0,0] #vx, vy, angVel; these are the local velocities!!!
-    f=1
-    if t < 3:
-      # f = SmoothStep(t, 0, 1, 0, 1)
-      vel = [1.2*f,0,0]
-    elif t < 6:
-      vel = [0,1.4*f,0]
-    elif t < 20:
-      vel = [0*f/3,0*-f/3,-0.125*np.pi]
-    elif t < 24:
-        vel = [0,0,0]
-      # vel = [0.5*f,0.5*f,0]
-    return vel
-
+trajectory = Trajectory(initialCoordinates=[0   ,0   ,0], initialTime=0)
+trajectory.Add(ProfileConstantAcceleration([0 ,0   ,0], 10))
+trajectory.Add(ProfileConstantAcceleration([3.6 ,0   ,0], 3))
+trajectory.Add(ProfileConstantAcceleration([3.6 ,4.2 ,0], 4))
+trajectory.Add(ProfileConstantAcceleration([3.6 ,4.2 ,2*np.pi], 10))
 
 
 # ^Y, lCar
@@ -368,20 +357,27 @@ for i in range(4):
     #                                         stiffness = pControl, damping = pControl*0.05, 
     #                                         rotationMarker0=RM0, 
     #                                         rotationMarker1=RM1))]
-   
+#%% 
+flagReadPosRot = True
+flagOdometry = True
+flagLidarNoise = True
+lidarNoiseLevel = [0.05, 0.01]
+  
 def GetCurrentData(mbs, Rot, pos): 
     data = np.zeros([mbs.variables['nLidar'] , 2])
     # RotGL = RotationMatrixZ(np.pi/2*0)[0:2, 0:2]
-    for i, sensor in enumerate(mbs.variables['sLidarList']): 
-        data[i,:] =  pos[0:2] + Rot[0:2,0:2] @ mbs.variables['R'][i] @ mbs.GetSensorValues(sensor).tolist() #  + [0.32]
-        
-        
+    if not(flagLidarNoise): 
+        for i, sensor in enumerate(mbs.variables['sLidarList']): 
+            data[i,:] =  pos[0:2] + Rot[0:2,0:2] @ mbs.variables['R'][i] @ mbs.GetSensorValues(sensor).tolist() #  + [0.32]
+    else: 
+        noise_distance = np.random.normal(0, lidarNoiseLevel[0], mbs.variables['nLidar'])
+        noise_angle = np.random.normal(0, lidarNoiseLevel[1], mbs.variables['nLidar'])
+        for i, sensor in enumerate(mbs.variables['sLidarList']): 
+            data[i,:] =  pos[0:2] + Rot2D(noise_angle[i]) @ Rot[0:2,0:2] @ mbs.variables['R'][i] @ (mbs.GetSensorValues(sensor) + [noise_distance[i],0]).tolist() #  + [0.32]
+            
     return data
 
-#%% 
-flagReadPosRot = False
-flagOdometry = True
-flagLidarNoise = True
+
 
 mbs.variables['wWheels'] = np.zeros([4])
 mbs.variables['posOdom'], mbs.variables['rotOdom'], mbs.variables['tLast'] = np.array([0,0], dtype=np.float64), 0, 0
@@ -389,7 +385,8 @@ mbs.variables['phiWheels'] = np.zeros(4)
 
 def PreStepUF(mbs, t):
     # using Prestep instead of UFLoad reduced simulation time fopr 24 seconds from 6.11887 to 4.02554 seconds (~ 34%)
-    v = ComputeVelocity(t)
+    u, v, a = trajectory.Evaluate(t) # 
+    # v2 = ComputeVelocity(t)
     wDesired = MecanumXYphi2WheelVelocities(v[0],v[1],v[2],rWheel,wCar,lCar)
     
     # wheel control
